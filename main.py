@@ -11,17 +11,14 @@ from telegram.ext import (
     filters,
 )
 
-# إعداد السجلات
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
 )
 
-# توكن البوت الصحيح الخاص بك
 TOKEN = "9131381140:AAHpGjj5IVOBjA8MsGc_ZL3vpwd4eQ7EhUo"
 
-# تخزين حالات المستخدمين والحسابات قيد المراقبة
 user_states = {}
-monitored_accounts = {}  # {chat_id: [ {username, chosen_type, ban_subtype, start_time_obj}, ... ]}
+monitored_accounts = {}
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     anime_gif_url = "https://media.giphy.com/media/3o7abKhOpu0NwenH3O/giphy.gif"
@@ -42,7 +39,6 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     user_states[user_id] = {"step": "menu"}
 
-    # إرسال صورة الأنمي المتحركة أولاً عند أمر /start
     try:
         await context.bot.send_animation(chat_id=chat_id, animation=anime_gif_url)
     except Exception:
@@ -78,7 +74,6 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
             reply_markup=None
         )
 
-    # زر النزاهة (Integrity) -> يفتح خيارات 2X و 3X حصرياً
     elif data == "cat_integrity":
         keyboard = [
             [InlineKeyboardButton("2X (New Account)", callback_data="integrity_2x"),
@@ -87,13 +82,11 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         reply_markup = InlineKeyboardMarkup(keyboard)
         await query.message.edit_text("Select Integrity level:", reply_markup=reply_markup)
 
-    # تفريعات النزاهة
     elif data in ["integrity_2x", "integrity_3x"]:
         ban_subtype = "New Account (2X)" if data == "integrity_2x" else "Fake Account (3X)"
         user_states[user_id]["ban_subtype"] = ban_subtype
         await save_and_monitor(query.message, chat_id, user_id)
 
-    # الأنواع الأخرى (تتخطى الاكسات فوراً)
     elif data == "cat_other_fraud":
         user_states[user_id]["ban_subtype"] = "Fraud"
         await save_and_monitor(query.message, chat_id, user_id)
@@ -154,7 +147,6 @@ async def save_and_monitor(message, chat_id, user_id):
         "start_time_obj": datetime.now()
     })
     
-    # رسالة تأكيد رسمية أن الحساب تحت المراقبة الفعالة في الخلفية
     await message.edit_text(
         f"✅ **Account added to live monitoring successfully!**\n\n"
         f"• **Username:** {account_data.get('username')}\n"
@@ -205,13 +197,11 @@ async def message_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("Image received. Select the ban category shown in the image:", reply_markup=reply_markup)
         user_states[user_id]["step"] = "selecting_category"
 
-# نظام المراقبة الخلفية (Background Monitoring Loop) يعمل 24/7
 async def background_monitoring_loop(application):
     while True:
         await asyncio.sleep(10)
         for chat_id, accounts in list(monitored_accounts.items()):
             try:
-                # عمليات الفحص التلقائي في الخلفية للحسابات المضافة
                 pass  
             except Exception as e:
                 logging.error(f"Error in background monitor: {e}")
